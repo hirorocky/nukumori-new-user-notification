@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 import requests
 import json
 import os
@@ -5,6 +6,7 @@ import datetime
 from dotenv import load_dotenv
 import sendgrid
 from sendgrid.helpers.mail import *
+import pytz
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
@@ -36,12 +38,23 @@ def fetch_new_users():
     url = "https://mi.nukumori-gay.space/api/users"
     headers = {"Content-Type": "application/json"}
     response = requests.post(url, data=data_encode, headers=headers, timeout=20)
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+
+    dt_now = datetime.datetime.now(ZoneInfo("Asia/Tokyo"))
+    yesterday = dt_now.date() - datetime.timedelta(days=1)
     return [
         user
         for user in response.json()
-        if user.get("createdAt").startswith(str(yesterday))
+        if is_in_yesterday(user.get("createdAt"), yesterday)
     ]
+
+
+def is_in_yesterday(created_at, yesterday):
+    created_at_in_utc = datetime.datetime.fromisoformat(
+        created_at.replace("Z", "+00:00")
+    )
+    jst_timezone = pytz.timezone("Asia/Tokyo")
+    created_at_in_jst = created_at_in_utc.astimezone(jst_timezone)
+    return created_at_in_jst.date() == yesterday
 
 
 def send_mail_with_sendgrid(body):

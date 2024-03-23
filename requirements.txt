@@ -1,3 +1,5 @@
-functions-framework
+functions-framework==3.*
 python-dotenv
 sendgrid
+requests
+pytz
